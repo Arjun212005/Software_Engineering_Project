@@ -1,242 +1,176 @@
-\documentclass[11pt,a4paper]{article}
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
 \usepackage[margin=1in]{geometry}
-\usepackage{hyperref}
 \usepackage{enumitem}
-\usepackage{graphicx}
-\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{hyperref}
 
-% -----------------------------------------------------
-% bvraghav-tiet-ucs503p-article.sty
-% -----------------------------------------------------
-
-% Variable: Lab Instructor
-\makeatletter \newcommand{\BvrSetLabInstructor}[1]{%
-  \gdef\Bvr@LabInstructor{#1}}
-% default
-\newcommand{\Bvr@LabInstructor}{Dr. Raghav %
-  B. Venkataramaiyer}
-% public accessor
-\newcommand{\BvrLabInstructorValue}{\Bvr@LabInstructor}
-\makeatother
-
-% Add subtitle
-\usepackage{titling}
-% -- Set title bold
-\pretitle{\begin{center}\bfseries\fontsize{18bp}{18bp}\selectfont}
-\makeatletter
-\newcommand{\BvrSubtitle}[1]{%
-  \posttitle{%
-    \par\end{center}
-    \begin{center}\large#1\end{center}
-    \vskip 0.5em}%
-}
-\makeatother
-
-% Hints in the section title(s)
-\newcommand{\BvrHint}[1]{%
-  {\normalfont\normalsize\itshape\hfill #1}}
-
-% -----------------------------------------------------
-
-\title{Grievance-Resolution System for a Tier-2/3 City}
-
-\BvrSetLabInstructor{Dr. Raghav B. Venkataramaiyer}
-
-\BvrSubtitle{%
-  Project Proposal for UCS503P  \\
-  Submitted to: \BvrLabInstructorValue \\ \bfseries
-  Thapar Institute of Engineering and Technology% 
-}
-
+\title{Personal Finance Manager: A Desktop-Based Financial\\ Tracking and Budgeting System \\ \large Project Proposal for UCS503P}
 \author{
-  Vidya Vaidyanathan, CSED%
-  \thanks{Roll No: \texttt{1024030xxx}, %
-    Email: \texttt{vvaidhanathan\_be24\@thapar.edu}}
-  \and 
-  Bhanurekha Ganesan, CSED%
-  \thanks{Roll No: \texttt{1024030xxx}, %
-    Email: \texttt{bganesan\_be24\@thapar.edu}}
+  Arjun Puri\thanks{Roll No: 1024030022, Email: apuri2\_be24@thapar.edu} \and
+  Anshdeep Singh \thanks{Roll No: 1024030105}
 }
-
-\date{\today}
+\date{August 2026 \\ \small Submitted to: Ms. Parmveer  \\ Thapar Institute of Engineering and Technology}
 
 \begin{document}
 \maketitle
 
-\section{Higher-order goal%
-  \BvrHint{\ldots secondary framing}}
-This project aims to improve sustainable urban
-governance by reducing the time and effort required to
-resolve citizen issues. While the topic is broader than
-any single municipality, the immediate engineering
-objective is to translate \emph{efficient public
-  service delivery} into a measurable, deployable
-software solution.
+\section{Higher-Order Goal --- secondary framing}
+This project aims to improve personal financial literacy and money discipline by reducing the effort required to track income, control spending, and reach savings targets. While the underlying idea applies to any household budgeting context, the immediate engineering objective is to translate everyday financial record-keeping into a measurable, deployable software solution -- one that a student or family can trust with real financial data.
 
-\section{Time-to-value %
-\BvrHint{\ldots primary heuristic}}
-\begin{itemize}[leftmargin=0.7cm]
-    \item We will deliver meaningful increments quickly by prototyping the core user workflow and validating it with users within a short iteration window.
-    \item We will prioritize fast feedback over perfection by using weekly iterations (and targeting CI-backed automation early) to reduce release friction.
-    \item Success is defined by what can be delivered and measured in the first iteration, then improved based on user feedback.
+\section{Time-to-Value --- primary heuristic}
+\begin{itemize}[noitemsep]
+  \item We deliver meaningful increments quickly by building the transaction-and-database core first and validating it before any reporting or chart features are attempted.
+  \item We prioritize fast feedback over perfection: a working login $\rightarrow$ add-transaction $\rightarrow$ updated-balance loop ships early, then budgets, goals and recurring items layer on top of it.
+  \item Success is defined by what can be delivered and measured in the first development phase, then improved based on self-testing and peer feedback.
 \end{itemize}
 
 \section{Problem Statement}
-Citizens in a tier-2/3 Indian city face delays and uncertainty when reporting local issues (e.g., streetlight outages, water leakage, garbage accumulation, road potholes). Common pain points include:
-\begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Fragmentation:} complaints are often made via multiple channels (calls, social media, paper forms), causing lost context.
-    \item \textbf{Low transparency:} citizens cannot easily see the status of their complaint (e.g., ``received'', ``assigned'', ``in progress'', ``resolved'').
-    \item \textbf{Slow coordination:} departments/field teams lack a unified, trackable workflow with clear ownership.
-    \item \textbf{Poor data quality:} duplicate or incomplete reports force rework and extend resolution time.
+Students and individuals typically receive income from multiple sources (allowance, stipends, part-time work) and spend across scattered categories -- food, travel, subscriptions, shopping, education and bills. Without a structured system, it is difficult to know where money is going or whether monthly spending is under control. Common pain points include:
+\begin{itemize}[noitemsep]
+  \item \textbf{Fragmentation:} transactions are scattered across bank SMS alerts, UPI apps and cash, with no single source of truth.
+  \item \textbf{Low visibility:} no simple, immediate view of how actual spending compares against a monthly budget.
+  \item \textbf{No goal tracking:} savings targets (e.g. for a laptop or a trip) are rarely tracked with a visible progress measure.
+  \item \textbf{Manual, repetitive entry:} recurring costs such as rent, subscriptions and bills are re-entered from memory each month, which is error-prone.
 \end{itemize}
+\textit{Why this matters now (the need):} for a student managing a limited and irregular monthly budget, even small improvements in visibility and habit-tracking noticeably improve financial discipline and reduce overspending -- and unlike a generic notes app, a purpose-built tool can enforce consistency and catch mistakes automatically.
 
-\textbf{Why this matters now (contextual relevance):} In an urban setting with limited staff bandwidth, even small process improvements can noticeably reduce resolution delays and repeated submissions.
-
-\section{Proposed Solution %
-\BvrHint{\ldots Software Proposition}}
+\section{Proposed Solution --- Software Proposition}
 \subsection{Overview}
-Build a \textbf{web-based} ``Grievance-to-Resolution'' system with the following components:
-\begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Citizen submission portal:} users submit an issue with photo (optional), category, and locality/ward.
-    \item \textbf{Automated triage:} basic duplicate detection and completeness checks.
-    \item \textbf{Department workflow:} assign issues to relevant department/team and update statuses.
-    \item \textbf{Status transparency:} citizens track status and receive notifications when resolved.
-    \item \textbf{Admin/ops dashboard:} performance summaries (resolution time, backlog).
+A desktop ``Finance Manager'' application with:
+\begin{itemize}[noitemsep]
+  \item \textbf{Transaction entry:} log income/expenses with amount, category, date, description.
+  \item \textbf{Budget engine:} monthly or category-wise spending limits with real-time remaining balance.
+  \item \textbf{Savings goals:} target amount, current saved amount, deadline and visible progress.
+  \item \textbf{Recurring expenses:} rent, subscriptions and bills scheduled by frequency, surfaced automatically.
+  \item \textbf{Dashboard and reports:} balance, income/expense summaries, category and monthly charts.
 \end{itemize}
 
-\subsection{Core workflow}
-\begin{enumerate}[leftmargin=0.7cm]
-    \item Citizen creates a complaint and receives a complaint ID immediately.
-    \item System validates completeness and suggests possible duplicates (lightweight similarity on text/category and approximate location).
-    \item Department staff update status (Received $\rightarrow$ Assigned $\rightarrow$ In Progress $\rightarrow$ Resolved).
-    \item Citizen views status updates and resolution notes.
+\subsection{Core Workflow}
+\begin{enumerate}[noitemsep]
+  \item User registers/logs in.
+  \item Dashboard loads balance, income, expenses, budget status and goal progress.
+  \item User adds a transaction (income/expense, amount, category, date, description).
+  \item System validates the input (amount, date, required fields).
+  \item Transaction is written to MySQL.
+  \item Balance, category totals, budget usage and savings are recalculated and the dashboard refreshes.
 \end{enumerate}
 
-\subsection{Operational constraints for an educational, tier-2/3 setting}
-\begin{itemize}[leftmargin=0.7cm]
-    \item Keep the solution usable on low-to-mid range devices via responsive web design.
-    \item Avoid dependence on advanced research algorithms; focus on workflow, automation, and system correctness.
-    \item Design for deployability using common web hosting and managed databases.
+\subsection{Operational Constraints for an Educational Setting}
+\begin{itemize}[noitemsep]
+  \item Keep the solution lightweight enough to run on a standard student laptop with a local MySQL instance.
+  \item Avoid dependence on advanced research algorithms; focus on correctness of financial calculations.
+  \item Design the data layer so it can later be exposed behind a web API without redesigning the schema.
 \end{itemize}
 
-\section{Solution Approach %
-\BvrHint{\ldots Engineering focus}}
-This is an engineering course project, so we focus on scalable administrative and workflow aspects rather than novel algorithm research.
+\section{Solution Approach --- Engineering Focus}
+This is a software engineering course project, so the emphasis is on correct, modular application design rather than algorithmic novelty.
 
-\subsection{Duplicate/quality assistance %
-\BvrHint{\ldots non-research}}
-Duplicate detection will be heuristic-based:
-\begin{itemize}[leftmargin=0.7cm]
-    \item Normalize text (category + short description keywords).
-    \item Use a simple similarity measure (e.g., token overlap / TF-IDF cosine with threshold) without claiming state-of-the-art.
-    \item Show top candidate duplicates to staff for decision; never fully auto-delete or auto-reject.
+\subsection{Financial Calculations --- non-research}
+All dashboard figures are deterministic, auditable formulas -- important for a finance tool, since a user must be able to \emph{trust} every number shown:
+\begin{itemize}[noitemsep]
+  \item Balance = Total Income $-$ Total Expenses
+  \item Savings Rate = (Savings / Income) $\times$ 100
+  \item Budget Remaining = Budget Limit $-$ Actual Spending
+  \item Goal Progress = (Current Saved / Target Amount) $\times$ 100
 \end{itemize}
 
-\subsection{Web architecture %
-\BvrHint{\ldots web-based solution}}
-A typical 3-tier web architecture:
-\begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Frontend:} responsive UI for citizens and staff (status pages, submission form, dashboard).
-    \item \textbf{Backend API:} authentication, complaint submission, status transitions, assignment logic.
-    \item \textbf{Database:} store users, complaints, status history, attachments metadata.
+\subsection{Application Architecture --- 3-tier}
+\begin{itemize}[noitemsep]
+  \item \textbf{Presentation:} Tkinter GUI -- login, dashboard, transaction forms, budget/goal views.
+  \item \textbf{Business logic:} Python modules for validation, calculations, recurring-expense scheduling.
+  \item \textbf{Data:} MySQL via PyMySQL -- users, categories, transactions, budgets, savings goals, recurring expenses.
 \end{itemize}
 
-\subsection{CI/CD and fast delivery enabler}
-CI/CD will be used to:
-\begin{itemize}[leftmargin=0.7cm]
-    \item Automatically build and run tests on every change.
-    \item Produce repeatable deployment artifacts to staging.
-    \item Enable safe and frequent releases of incremental features.
+\subsection{Testing and Delivery Discipline}
+\begin{itemize}[noitemsep]
+  \item Unit tests for calculation functions (balance, budget remaining, goal progress) run before every merge.
+  \item Manual regression checklist for the transaction $\rightarrow$ dashboard $\rightarrow$ report path before each phase is marked complete.
+  \item A lightweight script-based build/run check stands in for full CI/CD now, with a clear upgrade path to a real CI runner if the project moves to a web/Flask version.
 \end{itemize}
 
-\section{Evaluation Criterion %
-\BvrHint{\ldots measurable and attributable}}
-We define success using measurable metrics tied to the core workflow.
+\section{Evaluation Criterion --- measurable and attributable}
+We define success using measurable metrics tied to the core workflow, not subjective polish -- this is what makes the result convincing rather than anecdotal.
 
-\subsection{Primary evaluation metric}
-\textbf{Time-to-acknowledgement (TTA):} time between complaint submission and ``Received/Assigned'' status creation in the system.
-\begin{itemize}[leftmargin=0.7cm]
-    \item Target: median TTA $\le$ 2 hours during pilot window.
-    \item Attribution: measured from database timestamps (submission vs. first status update by staff).
+\subsection{Primary Evaluation Metric}
+\textbf{Dashboard Refresh Latency (DRL):} time between saving a transaction and the dashboard/report views reflecting the updated balance, budget and charts.
+\begin{itemize}[noitemsep]
+  \item Target: DRL $\leq$ 1 second on a standard student laptop for up to 5{,}000 transactions.
+  \item Attribution: measured by timestamping the save call and the completed UI refresh.
 \end{itemize}
 
-\subsection{Secondary evaluation metrics}
-\begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Resolution time reduction:} reduce time-to-resolved compared to baseline process (even if baseline is collected via survey).
-    \item \textbf{Duplicate rate:} percentage of complaints flagged as duplicates and resolved without rework.
-    \item \textbf{User clarity:} citizen-reported clarity of status using a simple 1--5 feedback question.
-    \item \textbf{Reliability:} availability of staging/production for login and submission during business hours (e.g., $\ge$ 99\% uptime in pilot).
+\subsection{Secondary Evaluation Metrics}
+\begin{itemize}[noitemsep]
+  \item \textbf{Calculation accuracy:} 100\% agreement between system-computed figures and hand-calculated values on a fixed test dataset.
+  \item \textbf{Task completion time:} average time for a first-time user to add a transaction and locate their updated balance.
+  \item \textbf{Reliability:} percentage of test sessions completed without a crash or unhandled exception.
+  \item \textbf{Report usefulness:} peer-reviewer rating (1--5) of whether the report clearly answers ``where did my money go?''
 \end{itemize}
 
-\subsection{Pilot validation plan %
-\BvrHint{\ldots high-level}}
-\begin{itemize}[leftmargin=0.7cm]
-    \item Recruit 10--20 pilot users (citizens) and 3--5 staff roles (department simulation if real staff unavailable).
-    \item Compare metrics before/after within the iteration window by logging baseline estimates via short interviews or existing process observations.
+\subsection{Pilot Validation Plan}
+\begin{itemize}[noitemsep]
+  \item Recruit 3--5 peer testers to use the application for a simulated month of transactions.
+  \item Compare DRL and calculation accuracy against the fixed test dataset across development phases.
+  \item Collect qualitative feedback on dashboard clarity and fold it into the UI-polishing phase.
 \end{itemize}
 
-\section{Scalability %
-\BvrHint{\ldots with foresight}}
-The proposition should scale in both theoretical and practical senses.
-
-\begin{enumerate}[leftmargin=0.7cm]
-    \item \textbf{Scalable (theoretically):} The system should support growth in number of complaints and concurrent dashboard usage by:
-    \begin{itemize}[leftmargin=0.7cm]
-        \item decoupling components (frontend/backend),
-        \item enabling pagination and indexing for common queries,
-        \item using stateless API design.
-    \end{itemize}
-    
-    \item \textbf{Operationally deployable (practically):} The system should run on common web hosting:
-    \begin{itemize}[leftmargin=0.7cm]
-        \item managed database,
-        \item containerized or platform-hosted deployment,
-        \item CI/CD pipeline for staging/production.
-    \end{itemize}
+\section{Scalability --- with foresight}
+\begin{enumerate}[noitemsep]
+  \item \textbf{Scalable (theoretically):}
+  \begin{itemize}[noitemsep]
+    \item Decoupled presentation / business-logic / data layers, so any layer can be replaced independently (e.g. Tkinter $\rightarrow$ Flask/React).
+    \item Indexing frequently-queried columns (\texttt{user\_id}, \texttt{date}, \texttt{category\_id}) so queries stay fast as transaction volume grows.
+    \item Schema designed to support multiple accounts/wallets per user (cash, bank, UPI) without breaking existing calculations.
+  \end{itemize}
+  \item \textbf{Operationally deployable (practically):}
+  \begin{itemize}[noitemsep]
+    \item Packaged as a standalone executable for easy distribution and demo.
+    \item Business logic already lives outside the UI, so the same schema and calculations move behind a Flask REST API with minimal rework.
+    \item A hosted managed database is a drop-in replacement for the local database when moving to a multi-user version.
+  \end{itemize}
 \end{enumerate}
+\[
+\text{Desktop MVP} \rightarrow \text{Web App (Flask)} \rightarrow \text{Multi-user Cloud} \rightarrow \text{Mobile App} \rightarrow \text{Family/Shared Budgets}
+\]
 
-\section{Engine availability heuristic}
-A mature set of ``engines'' (tooling/services) is available to implement this as a web-based project:
-\begin{itemize}[leftmargin=0.7cm]
-    \item Web framework for REST APIs and templated/reactive pages.
-    \item Managed relational or document database.
-    \item Authentication approach (token-based or session-based).
-    \item Object storage for optional attachments (or local storage for pilot).
-    \item Test framework for unit/integration tests.
-    \item CI runner and staging deployment target.
-\end{itemize}
-We will use these mature components to focus on workflow design, correctness, and measurement rather than inventing new infrastructure.
-
-\section{Project scope and deliverables %
-\BvrHint{\ldots iteration-friendly}}
-\subsection{Initial deliverable %
-\BvrHint{\ldots first iteration}}
-\begin{itemize}[leftmargin=0.7cm]
-    \item Citizen submission form + complaint ID generation
-    \item Staff workflow: update status and assignment
-    \item Citizen status page: view timeline/history
-    \item Basic logging and timestamps for TTA measurement
-    \item CI: build + backend unit tests + linting
-    \item CD to staging with a single command or pipeline job
+\section{Engine Availability Heuristic}
+A mature, well-documented set of ``engines'' is available, so effort goes into data modelling and correctness rather than infrastructure:
+\begin{itemize}[noitemsep]
+  \item \textbf{Python} -- application logic, validation, orchestration.
+  \item \textbf{Tkinter} -- desktop GUI for all screens.
+  \item \textbf{MySQL + PyMySQL} -- persistent relational storage and connectivity.
+  \item \textbf{Matplotlib} -- monthly trend and category-distribution charts.
+  \item \textbf{datetime / csv} -- recurring-expense scheduling and optional export.
 \end{itemize}
 
-\subsection{Subsequent deliverables}
-\begin{itemize}[leftmargin=0.7cm]
-    \item Lightweight duplicate suggestions with staff review
-    \item Notification layer (email/SMS optional in later iteration; can start with in-app notifications)
-    \item Admin dashboard for metrics and backlog
-    \item Improved search/filtering and indexed queries for scale readiness
+\section{Project Scope and Deliverables --- iteration-friendly}
+\subsection{Initial Deliverable --- first iteration}
+\begin{itemize}[noitemsep]
+  \item Database schema: users, categories, transactions tables
+  \item Login/registration and session handling
+  \item Add/view transaction workflow with validation
+  \item Dashboard: balance, income, expenses (auto-recalculated)
+  \item Unit tests for the core calculation functions
 \end{itemize}
 
-\section{Risks and mitigations}
-\begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Data privacy / consent:} minimize collected data; keep attachments optional; store only what is needed.
-    \item \textbf{Staff adoption:} provide an easy UI for status updates; keep workflow steps minimal; include shortcuts.
-    \item \textbf{Evaluation measurement ambiguity:} instrument timestamps and define clear status transitions before development begins.
-    \item \textbf{Operational issues in pilot:} use staging early; ensure CI/CD produces repeatable deployments.
+\subsection{Subsequent Deliverables}
+\begin{itemize}[noitemsep]
+  \item Category management and budget engine
+  \item Savings goals with progress tracking
+  \item Recurring expenses with due-date surfacing
+  \item Reports \& charts (Matplotlib) and CSV export
+  \item UI polishing, error handling, full regression pass
+\end{itemize}
+
+\section{Risks and Mitigations}
+\begin{itemize}[noitemsep]
+  \item \textbf{Financial data sensitivity} -- hash passwords, minimize stored fields, keep the database local/self-hosted for the pilot (builds user trust).
+  \item \textbf{Calculation errors compounding} -- unit-test core formulas before building dashboard/report features on top of them.
+  \item \textbf{Scope creep} -- follow the phased plan strictly; optional features (export, notifications) last.
+  \item \textbf{Cross-user data leakage} -- enforce \texttt{user\_id} scoping on every query; test explicitly for it.
 \end{itemize}
 
 \section{Summary}
-This project proposes a deployable web platform to reduce grievance handling delays in a tier-2/3 city context. It meets the course criteria by emphasizing time-to-value through rapid iterations, implementing CI/CD to support frequent safe releases, and using measurable evaluation criteria (especially time-to-acknowledgement). It remains focused on engineering workflow and scalability readiness rather than research-driven novelty.
+Finance Manager is a modular, database-driven personal finance application that lets a user track income and expenses, manage budgets and savings goals, handle recurring payments, and understand their financial behaviour through reports and a visual dashboard. Its strong points are what make it convincing as a course project: transparent, auditable calculations instead of black-box logic; a layered architecture that keeps the system scalable from a single-user desktop MVP to a multi-user web application without a redesign; and evaluation criteria (dashboard latency, calculation accuracy) that are measurable rather than anecdotal. Together these make the system not just functional, but trustworthy and built with clear headroom to grow.
 
 \end{document}
