@@ -1,0 +1,600 @@
+\documentclass{tietreport}
+
+% Import images
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+% Tables and maths
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{tabularx}
+
+% Bibliography configuration
+\usepackage[
+  date=year,
+  style=alphabetic,
+  backend=biber,
+  sorting=nty,
+  maxnames=5,
+  minnames=3,
+  maxalphanames=4,
+  minalphanames=3,
+  backref=true,
+  doi=false,
+  isbn=false,
+  url=true,
+  eprint=false
+]{biblatex}
+\addbibresource{references.bib}
+
+%% ==================================================
+%% PROJECT DETAILS
+%% ==================================================
+
+\TitlePageHeader{%
+  UCS503P%
+}
+
+\ProjectTitle{%
+  Personal Finance Manager%
+}
+
+\ProjectSubTitle{%
+  A Desktop-Based Financial Tracking and Budgeting System%
+}
+
+\author{%
+  \texttt{1024030022} Arjun Puri \\
+  \texttt{1024030105} Anshdeep Singh%
+}
+
+\TitlePageSubText{%
+  Group: \texttt{3C11} BE Third Year, CSE%
+}
+
+\AdvisorName{%
+  Ms. Parmveer%
+}
+
+\TitlePageFooterText{{%
+    \large Mid-Semester Evaluation \\[0.2cm]
+    \bfseries Computer Science and Engineering
+    Department%
+  } \\[0.15cm]
+  Thapar Institute of Engineering and Technology,
+  Patiala%
+}
+
+%% ==================================================
+
+\begin{document}
+
+% Removes the blank pages caused by chapters opening on odd pages.
+% Delete this line if your department requires chapters on right-hand pages.
+\let\cleardoublepage\clearpage
+
+\maketitle
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% ===== CHAPTER 1: INTRODUCTION =====
+
+\chapter{Introduction}
+
+\section{Background and Context}
+
+Students and young professionals usually earn from several
+sources, such as an allowance, a stipend or part-time work, and
+spend across many categories, including food, travel,
+subscriptions, shopping and bills. Without a structured system it
+is hard to see where money is going or whether monthly spending is
+under control. The \emph{Personal Finance Manager} (PFM) is a
+desktop application that brings income, expenses, budgets and
+savings goals into one place and turns them into summaries that
+the user can read at a glance.
+
+The project was proposed in~\cite{pfmproposal} with a
+\emph{time-to-value} approach: build the login and
+transaction-and-database core first, validate it, and then layer
+budgets, goals and reports on top. This report documents the
+implemented desktop application, its design, and the results of
+the first phase.
+
+\subsection{Problem Statement}
+
+Tracking personal finances by hand or across scattered sources
+leads to four recurring problems:
+
+\begin{itemize}
+  \item \textbf{Fragmentation:} transactions are spread across
+    bank alerts, UPI apps and cash, with no single source of truth.
+  \item \textbf{Low visibility:} there is no immediate view of how
+    actual spending compares with a monthly budget.
+  \item \textbf{No goal tracking:} savings targets, such as a
+    laptop or a phone, are rarely tracked with a visible progress
+    measure.
+  \item \textbf{Manual, repetitive entry:} recurring costs such as
+    rent are re-entered every month.
+\end{itemize}
+
+In its current version PFM provides a single MySQL-backed store for
+records the user enters, which partly addresses fragmentation; it
+does not import data from banks or UPI apps. It addresses low
+visibility and goal tracking directly. Manual entry is not
+reduced: recurring-expense handling is planned for a later
+iteration (Section~\ref{sec:limitations}).
+
+\section{Project Objectives}
+
+\begin{enumerate}
+  \item Provide a login and a single MySQL-backed store for a
+    user's income and expense records, with validation of amount,
+    date and required fields.
+  \item Show the user's financial position (income, expenses, net
+    savings, category breakdown and recent activity) on a
+    dashboard that updates from the stored data.
+  \item Let the user set monthly spending limits per category and
+    see usage against each limit.
+  \item Let the user create savings goals with a target, amount
+    saved and optional deadline, and view progress towards each
+    goal.
+  \item Provide monthly reports with a category breakdown and a
+    CSV export.
+  \item Keep the presentation, logic and data layers separate so
+    the system can later move to a web back end without
+    redesigning the schema.
+\end{enumerate}
+
+Objectives~1--5 are implemented in the current build, although the
+login does not yet hash passwords (Section~\ref{sec:limitations}).
+Objective~6 is partly met and is discussed under future work.
+
+% ===== CHAPTER 2: METHODOLOGY & DESIGN =====
+
+\chapter{Methodology and Design}
+
+\section{System Architecture}
+
+\subsection{High-Level Design}
+
+PFM is designed around the three-tier structure set out in the
+proposal. The tiers are only partly separated in the current
+build (Section~\ref{sec:limitations}).
+
+\begin{itemize}
+  \item \textbf{Presentation tier:} a Tkinter GUI with a login
+    screen and eight pages reachable from a persistent sidebar
+    (Dashboard, Transactions, Income, Expenses, Budget, Savings
+    Goals, Reports and Settings).
+  \item \textbf{Business-logic tier:} Python code that validates
+    input and computes the totals, percentages and budget figures
+    shown on screen. Some of this code still lives inside the GUI
+    classes.
+  \item \textbf{Data tier:} a MySQL database accessed through
+    PyMySQL, with queries parameterised using placeholders.
+\end{itemize}
+
+The core workflow is: the user logs in; the dashboard loads;
+the user adds an income or expense record; the input is
+validated; the record is written to MySQL; and the totals,
+budget usage and charts are recalculated when the views refresh.
+
+\subsection{Navigation Architecture}
+
+The application uses a single controller window (the \texttt{App}
+class, derived from \texttt{tk.Tk}) that owns all window-level
+settings. Each page is a \texttt{tk.Frame} built once and stacked
+in a shared container with \texttt{grid()}. Switching pages calls
+\texttt{show\_frame()}, which raises the chosen frame with
+\texttt{tkraise()}, and each page exposes an \texttt{on\_show()}
+hook that reloads its data when the page becomes visible. This
+replaced an earlier design that destroyed and recreated widgets on
+every navigation, which was slower and harder to maintain.
+
+\subsection{Technical Stack}
+
+\begin{itemize}
+  \item \textbf{Language:} Python 3, using the standard library
+    wherever possible.
+  \item \textbf{GUI:} Tkinter~\cite{pythontkinter}, with the
+    \texttt{tkcalendar} \texttt{DateEntry} widget for date
+    selection~\cite{tkcalendardocs}.
+  \item \textbf{Database:} MySQL~\cite{mysqlmanual} accessed
+    through PyMySQL~\cite{pymysqldocs}.
+  \item \textbf{Charts:} drawn directly on \texttt{tk.Canvas}
+    (bar, line, donut and progress-bar views), with no external
+    plotting library.
+  \item \textbf{Export:} CSV export of the monthly report.
+\end{itemize}
+
+\subsection{Financial Calculations}
+
+All displayed figures are deterministic formulas, so every number
+can be audited by hand:
+
+\begin{align*}
+  \text{Net Savings} &= \text{Total Income} - \text{Total Expenses}\\
+  \text{Budget Usage (\%)} &= \frac{\text{Amount Spent}}{\text{Budget Limit}} \times 100\\
+  \text{Goal Progress (\%)} &= \frac{\text{Amount Saved}}{\text{Target Amount}} \times 100\\
+  \text{Category Share (\%)} &= \frac{\text{Category Expense}}{\text{Total Expenses}} \times 100
+\end{align*}
+
+``Amount Spent'' is not defined identically everywhere. On the
+Budget page it is the expense total over categories that have a
+budget; on the sidebar spending-limit card it is the total of all
+expenses. Percentages are shown as whole numbers, and the rounding
+is not yet identical on every page. Both points are discussed in
+Section~\ref{sec:analysis}.
+
+% TODO: add the database design here (ER diagram and a table listing
+% every table with its columns, types and keys). Send me the output of
+% SHOW CREATE TABLE for each table and I will write this subsection.
+
+\section{Implementation Details}
+
+\subsection{Authentication}
+
+The login screen (Figure~\ref{fig:login}) takes a username and
+password, checks both fields are filled, and looks the user up
+with a parameterised query on the \texttt{users} table. In the
+current build the password is compared as plain text
+(Section~\ref{sec:limitations}). A failed check shows an inline
+error message; a database failure shows an error dialog. Pressing
+Enter in the password field submits the form.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.75\textwidth]{login.png}
+  \caption{Login screen}
+  \label{fig:login}
+\end{figure}
+
+\subsection{Dashboard}
+
+The dashboard (Figure~\ref{fig:dashboard}) is the landing page. It
+shows income, expenses and net savings with their change against
+the previous month, a monthly overview chart for January to
+December, an expense trend line, a list of recent transactions
+with All / Income / Expenses filters, an expense-breakdown donut
+chart and savings-goal progress. The sidebar also carries a
+spending-limit card that shows the total spent against the monthly
+limit. All charts are drawn on canvases and redraw when the
+Refresh button is pressed.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{dashboard.png}
+  \caption{Dashboard with summary statistics, charts, recent transactions and savings goals}
+  \label{fig:dashboard}
+\end{figure}
+
+\subsection{Transactions}
+
+The Transactions page (Figure~\ref{fig:transactions}) lists every
+income and expense record in one scrollable table with date,
+description, category, type and amount. Income rows are shown in
+green and expense rows in red, and a footer reports the number of
+records shown.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{transactions.png}
+  \caption{Transactions page with colour-coded income and expense rows}
+  \label{fig:transactions}
+\end{figure}
+
+\subsection{Income Management}
+
+The Income page (Figure~\ref{fig:income}) shows all-time income and
+the current month's income above a form with amount, category,
+description, date and income source. Amount must be a number
+greater than zero and the date must be a valid \texttt{dd-mm-yyyy}
+value; invalid input triggers a warning and nothing is saved. The
+category list covers salary, freelancing, business, investment,
+interest and other common sources.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{income.png}
+  \caption{Income management form with all-time and monthly totals}
+  \label{fig:income}
+\end{figure}
+
+\subsection{Expense Management}
+
+The Expenses page (Figure~\ref{fig:expenses}) follows a similar
+layout to the income page: summary cards for all-time and
+current-month spending and a form with name, amount, category and
+date. It also lists the most recent expenses with a delete control
+for each entry.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{expense.png}
+  \caption{Expense management page with recent expenses}
+  \label{fig:expenses}
+\end{figure}
+
+\subsection{Budget Management}
+
+On the Budget page (Figure~\ref{fig:budget}) the user chooses a
+category and a monthly limit. Saving a limit for a category that
+already has one updates it. Each budget row shows the amount spent,
+the percentage used, a progress bar, an edit and a delete control,
+and an ``over budget by'' message when the limit is exceeded. The
+header cards show the total monthly budget and how far spending is
+over or under it.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{budget.png}
+  \caption{Budget management with per-category usage and over-budget warnings}
+  \label{fig:budget}
+\end{figure}
+
+\subsection{Savings Goals}
+
+The Savings Goals page (Figure~\ref{fig:savings}) lets the user
+create or update a goal with a name, target amount, amount already
+saved and an optional deadline. Summary cards show the total
+target, total saved and overall progress, and each goal has a
+progress bar, the remaining amount, and Edit and Delete buttons.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{savings.png}
+  \caption{Savings goals with progress tracking}
+  \label{fig:savings}
+\end{figure}
+
+\subsection{Reports}
+
+The Reports page (Figure~\ref{fig:reports}) generates a summary for
+a chosen month and year: total income, total expenses, net savings,
+a category-wise expense breakdown with percentage shares, and a
+table of that month's transactions. The Export CSV button writes
+the report data to a CSV file.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{reports.png}
+  \caption{Monthly financial report with category breakdown and transaction list}
+  \label{fig:reports}
+\end{figure}
+
+\subsection{Settings}
+
+The Settings page (Figure~\ref{fig:settings}) shows the logged-in
+account and provides a Change Password option.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.7\textwidth]{settings.png}
+  \caption{Settings page}
+  \label{fig:settings}
+\end{figure}
+
+% ===== CHAPTER 3: RESULTS & EVALUATION =====
+
+\chapter{Results and Evaluation}
+
+\section{Testing Methodology}
+
+\begin{itemize}
+  \item \textbf{Functional testing:} each page was exercised
+    manually using the sample dataset visible in the screenshots
+    (income and expense records for October and November 2026,
+    three budgets and three savings goals).
+  \item \textbf{Input validation testing:} empty fields, non-numeric
+    or non-positive amounts and invalid dates are rejected with a
+    warning on the forms.
+  \item \textbf{Consistency checks:} figures that appear on more
+    than one page (totals, percentages, goal progress) were
+    compared across pages.
+  \item \textbf{Planned:} unit tests for the calculation functions,
+    performance measurement of dashboard refresh latency, and a
+    pilot with 3--5 peer testers, as defined in the
+    proposal~\cite{pfmproposal}.
+\end{itemize}
+
+Table~\ref{tab:testcases} lists the manual test cases and their
+outcomes.
+
+% TODO: confirm each row against the running app before submission,
+% and add more rows (budget update, goal update, CSV export, delete).
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|c|l|X|X|c|}
+  \hline
+  \textbf{ID} & \textbf{Area} & \textbf{Input / action} &
+  \textbf{Observed behaviour} & \textbf{Result} \\
+  \hline
+  T1 & Login & Empty username or password &
+    Inline error message shown & Pass \\
+  \hline
+  T2 & Income form & Amount empty, non-numeric, zero or negative &
+    Warning shown; nothing saved & Pass \\
+  \hline
+  T3 & Income form & Date not in \texttt{dd-mm-yyyy} format &
+    Warning shown; nothing saved & Pass \\
+  \hline
+  T4 & Budget usage & Compare Budget page with sidebar card &
+    146\% (Rs.\,19,000) vs 150\% (Rs.\,19,500) & Fail \\
+  \hline
+  T5 & Goal progress & Compare dashboard with Savings Goals page &
+    16\% vs 17\% for the same goal & Fail \\
+  \hline
+\end{tabularx}
+\caption{Manual test cases and outcomes}
+\label{tab:testcases}
+\end{table}
+
+\section{Implementation Status}
+
+Table~\ref{tab:status} compares the proposal's deliverables with
+the current build.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|}
+  \hline
+  \textbf{Deliverable (from proposal)} & \textbf{Status} \\
+  \hline
+  Login with MySQL authentication & Implemented (plain-text password) \\
+  \hline
+  Add / view income and expense records & Implemented \\
+  \hline
+  Dashboard with totals and charts & Implemented \\
+  \hline
+  Budget engine with per-category limits & Implemented \\
+  \hline
+  Savings goals with progress & Implemented \\
+  \hline
+  Reports and CSV export & Implemented \\
+  \hline
+  User registration & Not yet implemented \\
+  \hline
+  Recurring expenses & Not yet implemented \\
+  \hline
+  Password hashing & Not yet implemented \\
+  \hline
+  Unit tests and latency measurement & Planned \\
+  \hline
+  Matplotlib charts & Replaced by Tkinter canvas drawing \\
+  \hline
+\end{tabular}
+\caption{Implementation status against the project proposal}
+\label{tab:status}
+\end{table}
+
+\section{Performance Metrics}
+
+The proposal sets a Dashboard Refresh Latency (DRL) target of
+at most one second for up to 5,000 transactions. This has not yet
+been measured on the current build; Table~\ref{tab:performance}
+will be filled in once timing is added.
+
+% TODO: replace "To be measured" with real numbers once you have run
+% the timing and the unit tests.
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|r|r|}
+  \hline
+  \textbf{Metric} & \textbf{Target} & \textbf{Achieved} \\
+  \hline
+  Dashboard refresh latency (5,000 records) & $\leq 1$ s & To be measured \\
+  \hline
+  Calculation accuracy on fixed test set & $100\%$ & To be measured \\
+  \hline
+\end{tabular}
+\caption{Evaluation metrics defined in the proposal}
+\label{tab:performance}
+\end{table}
+
+\section{Analysis}
+\label{sec:analysis}
+
+\begin{itemize}
+  \item \textbf{Objectives met:} login (without password hashing),
+    transaction entry, dashboard, budgets, savings goals and
+    reports are working end to end against MySQL.
+  \item \textbf{Challenges:} early versions rebuilt every page on
+    each navigation and showed a blank content area when frames
+    were embedded incorrectly; moving to a single controller with
+    stacked frames and \texttt{on\_show()} refresh hooks fixed this.
+  \item \textbf{Inconsistencies found during testing:}
+    \begin{itemize}
+      \item The Budget page reports 146\% usage (Rs.\,19,000 of
+        Rs.\,13,000) while the sidebar spending-limit card reports
+        150\% (Rs.\,19,500 of Rs.\,13,000). The Budget page counts
+        only categories that have a budget, whereas the sidebar
+        counts all expenses, so the two figures differ by the
+        Rs.\,500 spent on an unbudgeted category.
+      \item Goal percentages differ between pages: the same goal
+        (Rs.\,10,000 saved of Rs.\,60,000, i.e.\ 16.67\%) appears as
+        16\% on the dashboard and 17\% on the Savings Goals page.
+        This is consistent with one view truncating and the other
+        rounding to the nearest integer.
+      \item Date formats differ between forms: income and expense
+        dates use \texttt{dd-mm-yyyy}, while the goal deadline uses
+        \texttt{YYYY-MM-DD}.
+    \end{itemize}
+    The first two should be unified in a single shared calculation
+    function and the third in a single date-format setting.
+\end{itemize}
+
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{itemize}
+  \item Passwords are currently compared as plain text and the
+    database credentials are set inside the source code. This was
+    accepted for the first phase and must be replaced with hashed
+    passwords and external configuration before real use.
+  \item There is no registration screen and no recurring-expense
+    support yet.
+  \item All records are entered manually; there is no import from
+    bank statements or UPI apps.
+  \item Several queries and calculations still live inside the GUI
+    classes, so the business-logic tier is not yet fully separate.
+  \item Dashboard latency and calculation accuracy have not yet been
+    measured (Table~\ref{tab:performance}).
+\end{itemize}
+
+% ===== CHAPTER 4: CONCLUSION =====
+
+\chapter{Conclusion}
+
+\section{Summary of Work}
+
+A working desktop Personal Finance Manager has been built with
+Python, Tkinter and MySQL. It supports login, income and expense
+entry, a dashboard, per-category budgets, savings goals, monthly
+reports with CSV export, and a settings page. Objectives~1 to~5
+are met, although the login does not yet hash passwords;
+Objective~6 is partly met.
+
+\section{Key Findings}
+
+\begin{itemize}
+  \item \textbf{Finding 1:} building the transaction-and-database
+    core first, as planned in the proposal, made it straightforward
+    to add budgets, goals and reports on top of the same data.
+  \item \textbf{Finding 2:} a single controller with stacked frames
+    and refresh hooks is a more reliable navigation pattern in
+    Tkinter than recreating widgets on each page change.
+  \item \textbf{Finding 3:} the same figure computed in more than
+    one place drifts apart (146\% versus 150\% usage), so shared
+    calculation functions are needed.
+\end{itemize}
+
+\section{Future Work and Recommendations}
+
+\begin{enumerate}
+  \item Hash passwords, move credentials to a configuration file,
+    and add user registration.
+  \item Add recurring expenses with due-date reminders.
+  \item Move queries and calculations into a separate data-access
+    and logic layer, and add unit tests for the formulas.
+  \item Measure dashboard refresh latency on 5,000 records and add
+    database indexes on user, date and category columns.
+  \item Expose the logic layer through a Flask REST API, following
+    the proposal's path from desktop MVP to web, multi-user cloud
+    and mobile versions~\cite{pfmproposal}.
+\end{enumerate}
+
+\section{Final Remarks}
+
+The project shows that a simple, auditable finance tool can be
+built with standard tools and extended in stages. The next phase
+is to harden security, remove duplicated calculations and
+measure performance against the targets set in the proposal.
+
+% ===== BIBLIOGRAPHY =====
+
+\printbibliography[heading=bibintoc]
+
+\end{document}
